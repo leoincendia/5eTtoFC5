@@ -43,3 +43,13 @@ Some 5eTools monsters use their 'replace' feature, which is something that I mig
 ### Developer
 
 * Discord: **Flore#0001**
+
+
+Leoincndia additional notes
+You need to install the following
+requests
+wand
+python-slugify
+six (?)
+
+install software ImageMagick
