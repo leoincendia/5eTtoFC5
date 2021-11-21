@@ -46,10 +46,10 @@ Some 5eTools monsters use their 'replace' feature, which is something that I mig
 
 
 Leoincndia additional notes
-You need to install the following
-requests
-wand
-python-slugify
+You need to install the following:
+requests,
+wand,
+python-slugify,
 six (?)
 
 install software ImageMagick
