@@ -214,7 +214,7 @@ if args.updatedata:
         with open(os.path.join(bestiarydir,"index.json"), 'wb') as f:
             f.write(req.content)
             f.close()
-        with open(os.path.join(bestiarydir,"index.json"),encoding='utf-8') as f:
+        with open(os.path.join(bestiarydir,"index.json"),encoding="utf-8") as f:
             idx = json.load(f)
             f.close()
         for k,v in idx.items():
@@ -228,7 +228,7 @@ if args.updatedata:
         with open(os.path.join(bestiarydir,"fluff-index.json"), 'wb') as f:
             f.write(req.content)
             f.close()
-        with open(os.path.join(bestiarydir,"fluff-index.json"),encoding='utf-8') as f:
+        with open(os.path.join(bestiarydir,"fluff-index.json"),encoding="utf-8") as f:
             idx = json.load(f)
             f.close()
         for k,v in idx.items():
@@ -246,7 +246,7 @@ if args.updatedata:
         with open(os.path.join(classdir,"index.json"), 'wb') as f:
             f.write(req.content)
             f.close()
-        with open(os.path.join(classdir,"index.json"),encoding='utf-8') as f:
+        with open(os.path.join(classdir,"index.json"),encoding="utf-8") as f:
             idx = json.load(f)
             f.close()
         for k,v in idx.items():
@@ -260,7 +260,7 @@ if args.updatedata:
         with open(os.path.join(spellsdir,"index.json"), 'wb') as f:
             f.write(req.content)
             f.close()
-        with open(os.path.join(spellsdir,"index.json"),encoding='utf-8') as f:
+        with open(os.path.join(spellsdir,"index.json"),encoding="utf-8") as f:
             idx = json.load(f)
             f.close()
         for k,v in idx.items():
@@ -334,7 +334,7 @@ if args.combinedoutput:
     rnwins = 0
     rnloss = 0
 for file in args.inputJSON:
-    with open(file,encoding='utf-8') as f:
+    with open(file,encoding="utf-8") as f:
         d = json.load(f)
         f.close()
     fluff = None
@@ -345,7 +345,7 @@ for file in args.inputJSON:
     if os.path.isfile(os.path.split(file)[0] + "/fluff-" + os.path.split(file)[1]):
         if args.verbose:
             print("Fluff file found:",os.path.split(file)[0] + "/fluff-" + os.path.split(file)[1])
-        with open(os.path.split(file)[0] + "/fluff-" + os.path.split(file)[1],encoding='utf-8') as f:
+        with open(os.path.split(file)[0] + "/fluff-" + os.path.split(file)[1],encoding="utf-8") as f:
             fluff = json.load(f)
             f.close()
 
@@ -1099,7 +1099,7 @@ for file in args.inputJSON:
                     print("Parsing " + m['name'])
                 parseItem(copy.deepcopy(m), compendium, args)
                 iwins += 1
-        with open("./data/magicvariants.json",encoding='utf-8') as f:
+        with open("./data/magicvariants.json",encoding="utf-8") as f:
             mv = json.load(f)
             f.close()
         if 'variant' in mv:
@@ -1368,7 +1368,7 @@ for file in args.inputJSON:
             ".xml",
             xml_declaration=True,
             short_empty_elements=False,
-            encoding='utf-8')
+            encoding="utf-8")
 if args.combinedoutput:
     if mwins > 0 or mloss > 0:
         print("Converted {}/{} monsters (failed {})".format(mwins, mwins + mloss,
@@ -1441,7 +1441,7 @@ if args.combinedoutput:
         if mwins == 0 and swins == 0 and iwins == 0:
             print ("Nothing to output")
         else:
-            tree.write(os.path.join(args.tempdir,"compendium.xml"), xml_declaration=True, short_empty_elements=False, encoding='utf-8')
+            tree.write(os.path.join(args.tempdir,"compendium.xml"), xml_declaration=True, short_empty_elements=False, encoding="utf-8")
             zipfile = shutil.make_archive(args.combinedoutput,"zip",args.tempdir)
             shutil.move(zipfile,args.combinedoutput)
             if tempdir:
@@ -1451,4 +1451,4 @@ if args.combinedoutput:
             afwins == 0 and aiwins == 0 and aswins == 0 and edwins == 0 and eiwins == 0 and mvwins == 0 and orwins == 0 and pbwins == 0 and rnwins == 0:
             print("Nothing to output")
         else:
-            tree.write(args.combinedoutput, xml_declaration=True, short_empty_elements=False, encoding='utf-8')
+            tree.write(args.combinedoutput, xml_declaration=True, short_empty_elements=False, encoding="utf-8")

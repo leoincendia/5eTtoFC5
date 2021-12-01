@@ -98,7 +98,7 @@ def parseClass(m, compendium, args):
     if not args.srd:
         SFText = ET.SubElement(StartingFeature, 'text')
         if 'page' in m:
-            SFText.text = "Source: " + utils.getFriendlySource(m['source'],args) + " p. " + str(m['page'])
+            SFText.text = "Source: " + utils.getFriendlySource(m['source'],args) + ", page " + str(m['page'])
         else:
             SFText.text = "Source: " + utils.getFriendlySource(m['source'],args)
     if 'multiclassing' in m:
@@ -149,7 +149,7 @@ def parseClass(m, compendium, args):
         if not args.srd:
             SFText = ET.SubElement(StartingFeature, 'text')
             if 'page' in m:
-                SFText.text = "Source: " + utils.getFriendlySource(m['source'],args) + " p. " + str(m['page'])
+                SFText.text = "Source: " + utils.getFriendlySource(m['source'],args) + ", page " + str(m['page'])
             else:
                 SFText.text = "Source: " + utils.getFriendlySource(m['source'],args)
     armor = ET.SubElement(Class, 'armor')
@@ -307,7 +307,7 @@ def parseClass(m, compendium, args):
                             SFText.text = ""
                             SFText = ET.SubElement(sfopt, 'text')
                             if 'page' in opt:
-                                SFText.text = "Source: " + utils.getFriendlySource(opt['source'],args) + " p. " + str(opt['page'])
+                                SFText.text = "Source: " + utils.getFriendlySource(opt['source'],args) + ", page " + str(opt['page'])
                             else:
                                 SFText.text = "Source: " + utils.getFriendlySource(opt['source'],args)
                 else:
@@ -317,7 +317,7 @@ def parseClass(m, compendium, args):
                 SFText.text = ""
                 SFText = ET.SubElement(ft, 'text')
                 if 'page' in feature:
-                    SFText.text = "Source: " + utils.getFriendlySource(feature['source'],args) + " p. " + str(feature['page'])
+                    SFText.text = "Source: " + utils.getFriendlySource(feature['source'],args) + ", page " + str(feature['page'])
                 else:
                     SFText.text = "Source: " + utils.getFriendlySource(feature['source'],args)
             if type(featureRef) == dict and "gainSubclassFeature" in featureRef and featureRef["gainSubclassFeature"]==True:
@@ -377,7 +377,7 @@ def parseClass(m, compendium, args):
                             SFText.text = ""
                             SFText = ET.SubElement(ft, 'text')
                             if 'page' in subclass:
-                                SFText.text = "Source: " + utils.getFriendlySource(subclass['source'],args) + " p. " + str(subclass['page'])
+                                SFText.text = "Source: " + utils.getFriendlySource(subclass['source'],args) + ", page " + str(subclass['page'])
                             else:
                                 SFText.text = "Source: " + utils.getFriendlySource(subclass['source'],args)
                         currentsubclass += 1

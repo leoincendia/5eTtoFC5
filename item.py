@@ -39,7 +39,7 @@ def parseItem(m, compendium, args):
 
     itm = ET.SubElement(compendium, 'item')
     name = ET.SubElement(itm, 'name')
-    name.text = m['name']
+    name.text = utils.fixTags(m['name'],m,args.nohtml)
 
     if args.nohtml:
         heading = ET.SubElement(itm, 'detail')
@@ -375,27 +375,27 @@ def parseItem(m, compendium, args):
             imagetag = ET.SubElement(itm, 'image')
             imagetag.text = slug + ".jpg"
 
-        sourcetext = "{} p. {}".format(
+        sourcetext = "<i>{}</i>, page {}".format(
             utils.getFriendlySource(m['source'],args), m['page']) if 'page' in m and m['page'] != 0 else utils.getFriendlySource(m['source'],args)
 
         if 'otherSources' in m and m["otherSources"] is not None:
             for s in m["otherSources"]:
                 sourcetext += ", "
-                sourcetext += "{} p. {}".format(
+                sourcetext += "<i>{}</i>, page {}".format(
                     utils.getFriendlySource(s["source"],args), s["page"]) if 'page' in s and s["page"] != 0 else utils.getFriendlySource(s["source"],args)
         if 'entries' in m:
             if args.nohtml:
                 m['entries'].append("Source: {}".format(sourcetext))
             else:
-                m['entries'].append("<i>Source: {}</i>".format(sourcetext))
+                m['entries'].append("\n<b>Source:</b> {}".format(sourcetext))
         else:
             if args.nohtml:
                 m['entries'] = ["Source: {}".format(sourcetext)]
             else:
-                m['entries'] = ["<i>Source: {}</i>".format(sourcetext)]
-        if not args.nohtml:
-            source = ET.SubElement(itm, 'source')
-            source.text = sourcetext
+                m['entries'] = ["\n<b>Source:</b> {}".format(sourcetext)]
+        #if not args.nohtml:
+        #    source = ET.SubElement(itm, 'source')
+        #    source.text = sourcetext
     bodyText = ET.SubElement(itm, 'text')
     bodyText.text = ""
 
@@ -453,11 +453,11 @@ def parseItem(m, compendium, args):
                         for item in sube["items"]:
                             if type(item) == dict and 'type' in item and item['type'] == 'item':
                                 if args.nohtml:
-                                    subentries.append("• {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
+                                    subentries.append("&lt;b&gt;•&lt;/b&gt; {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
                                 else:
-                                    subentries.append("• <i>{}:</i> {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
+                                    subentries.append("&lt;b&gt;•&lt;/b&gt; <i>{}:</i> {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
                             else:
-                                subentries.append("• {}".format(utils.fixTags(item,m,args.nohtml)))
+                                subentries.append("&lt;b&gt;•&lt;/b&gt; {}".format(utils.fixTags(item,m,args.nohtml)))
                     elif type(sube) == dict and sube["type"] == "list":
                         for item in sube["items"]:
                             if type(item) == dict and "entries" in item:
@@ -470,17 +470,17 @@ def parseItem(m, compendium, args):
                                     subentries.append("\n".join(ssubentries))
                             elif type(item) == dict and 'type' in item and item['type'] == 'item':
                                 if args.nohtml:
-                                    subentries.append("• {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
+                                    subentries.append("&lt;b&gt;•&lt;/b&gt; {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
                                 else:
-                                    subentries.append("• <i>{}:</i> {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
+                                    subentries.append("&lt;b&gt;•&lt;/b&gt; <i>{}:</i> {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
                             elif type(item) == dict and item["type"] == "list" and "style" in item and item["style"] == "list-hang-notitle":
                                 for subitem in item["items"]:
                                     if args.nohtml:
-                                        subentries.append("• {}: {}".format(subitem["name"],utils.fixTags(subitem["entry"],m,args.nohtml)) + "\n")
+                                        subentries.append("&lt;b&gt;•&lt;/b&gt; {}: {}".format(subitem["name"],utils.fixTags(subitem["entry"],m,args.nohtml)) + "\n")
                                     else:
-                                        subentries.append("• <i>{}:</i> {}".format(subitem["name"],utils.fixTags(subitem["entry"],m,args.nohtml)) + "\n")
+                                        subentries.append("&lt;b&gt;•&lt;/b&gt; <i>{}:</i> {}".format(subitem["name"],utils.fixTags(subitem["entry"],m,args.nohtml)) + "\n")
                             else:
-                                subentries.append("• {}".format(utils.fixTags(item,m,args.nohtml)))
+                                subentries.append("&lt;b&gt;•&lt;/b&gt; {}".format(utils.fixTags(item,m,args.nohtml)))
                 bodyText.text += "\n".join(subentries) + "\n"
             else:
                 if type(e) == dict and e["type"] == "list" and "style" in e and e["style"] == "list-hang-notitle":
@@ -489,11 +489,11 @@ def parseItem(m, compendium, args):
                             if "entry" not in item:
                                 item["entry"] = ""
                             if args.nohtml:
-                                bodyText.text += "• {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)) + "\n"
+                                bodyText.text += "&lt;b&gt;•&lt;/b&gt; {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)) + "\n"
                             else:
-                                bodyText.text += "• <i>{}:</i> {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)) + "\n"
+                                bodyText.text += "&lt;b&gt;•&lt;/b&gt; <i>{}:</i> {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)) + "\n"
                         else:
-                            bodyText.text += "• {}".format(utils.fixTags(item,m,args.nohtml)) + "\n"
+                            bodyText.text += "&lt;b&gt;•&lt;/b&gt; {}".format(utils.fixTags(item,m,args.nohtml)) + "\n"
                 elif type(e) == dict and e["type"] == "list":
                     for item in e["items"]:
                         if "entries" in item:
@@ -505,7 +505,7 @@ def parseItem(m, compendium, args):
                                     subentries.append(utils.fixTags(sube["text"],m,args.nohtml))
                                 bodyText.text += "\n".join(subentries) + "\n"
                         else:
-                            bodyText.text += "• {}".format(utils.fixTags(item,m,args.nohtml)) + "\n"
+                            bodyText.text += "&lt;b&gt;•&lt;/b&gt; {}".format(utils.fixTags(item,m,args.nohtml)) + "\n"
                 else:
                     bodyText.text += utils.fixTags(e,m,args.nohtml) + "\n"
 

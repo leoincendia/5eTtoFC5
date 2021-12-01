@@ -29,7 +29,7 @@ def parseRIV(m, t):
                                 " " if 'preNote' in x else "",
                                 ", ".join(parseRIV(x, t)),
                                 " " +
-                                x['note'] if 'note' in x else "")
+                                x['note'].replace('\'','’') if 'note' in x else "")
                         else:
                             riv.append(
                             "{}{}{}".format(
@@ -37,7 +37,7 @@ def parseRIV(m, t):
                                 " " if 'preNote' in x else "",
                                 ", ".join(parseRIV(x, t)),
                                 " " +
-                                x['note'] if 'note' in x else ""))
+                                x['note'].replace('\'','’') if 'note' in x else ""))
                     else:
                         riv.append(x)
                 if len(lis) > 0:
@@ -46,7 +46,7 @@ def parseRIV(m, t):
                             " " if 'preNote' in r else "",
                             ", ".join(riv),
                             " " +
-                            r['note'] if 'note' in r else "")
+                            r['note'].replace('\'','’') if 'note' in r else "")
 
                 else:
                     lis.append(
@@ -54,10 +54,10 @@ def parseRIV(m, t):
                             r['preNote'] +
                             " " if 'preNote' in r else "",
                             ", ".join(riv),
-                            " " +
-                            r['note'] if 'note' in r else ""))
+                            ", " +
+                            r['note'].replace('\'','’') if 'note' in r else ""))
         else:
-            lis.append(r)
+            lis.append(r.replace('\'','’'))
     return lis
 
 
@@ -65,16 +65,17 @@ def remove5eShit(s):
     if type(s) == int or type(s) == float:
         return str(s)
     s = re.sub(r'{@dc (.*?)}', r'DC \1', s)
+    s = re.sub(r'{@h}', r'<i>Hit:</i> ',s)
     s = re.sub(r'{@hit \+?(.*?)}', r'+\1', s)
-    s = re.sub(r'{@atk mw}', r'Melee Weapon Attack:', s)
-    s = re.sub(r'{@atk rw}', r'Ranged Weapon Attack:', s)
-    s = re.sub(r'{@atk ms}', r'Melee Spell Attack:', s)
-    s = re.sub(r'{@atk rs}', r'Ranged Spell Attack:', s)
-    s = re.sub(r'{@atk mw,rw}', r'Melee or Ranged Weapon Attack:', s)
-    s = re.sub(r'{@atk r}', r'Ranged Attack:', s)
-    s = re.sub(r'{@atk m}', r'Melee Attack:', s)
-    s = re.sub(r'{@h}', r'', s)
+    s = re.sub(r'{@atk mw}', r'<i>Melee Weapon Attack:</i>', s)
+    s = re.sub(r'{@atk rw}', r'<i>Ranged Weapon Attack:</i>', s)
+    s = re.sub(r'{@atk ms}', r'<i>Melee Spell Attack:</i>', s)
+    s = re.sub(r'{@atk rs}', r'<i>Ranged Spell Attack:</i>', s)
+    s = re.sub(r'{@atk mw,rw}', r'<i>Melee or Ranged Weapon Attack:</i>', s)
+    s = re.sub(r'{@atk r}', r'<i>Ranged Attack:</i>', s)
+    s = re.sub(r'{@atk m}', r'<i>Melee Attack:</i>', s)
     s = re.sub(r'{@recharge (.*?)}', r'(Recharge \1-6)', s)
+    s = re.sub(r'(Recharge 6-6)', r'Recharge 6', s)
     s = re.sub(r'{@recharge}', r'(Recharge 6)', s)
     s = re.sub(r'{@dice (.*?)(\|.*?)?}', r'\1', s)
     s = re.sub(r'{@scaledice (.*?)\|(.*?)\|(.*?)}', r'\3', s)
@@ -83,19 +84,21 @@ def remove5eShit(s):
     s = re.sub(r'{@filter (.*?)(\|.*?)?}', r'\1', s)
     s = re.sub(r'{@\w+ ([^{]*?)(\|[^{]*?)?}', r'\1', s)
     s = re.sub(r'{@\w+ ((.*?|{.*?})?)(\|(.*?|{.*?})?)?}', r'\1', s)
+    s = re.sub('\'','’', s)
     return s.strip()
 
 
 def indent(elem, level=0):
-    i = "\n" + level * "  "
-    j = "\n" + (level - 1) * "  "
+    i = "\n" + level * "\t"
+    j = "\n" + (level - 1) * "\t"
     if len(elem):
         if not elem.text or not elem.text.strip():
-            elem.text = i + "  "
+            elem.text = i
         if not elem.tail or not elem.tail.strip():
             elem.tail = i
         for subelem in elem:
             indent(subelem, level + 1)
+        elem[len(elem)-1].tail = j
         if not elem.tail or not elem.tail.strip():
             elem.tail = j
     else:
@@ -126,44 +129,46 @@ def convertAlign(s):
             return " ".join([convertAlign(x) for x in s['alignment']])
     else:
         alignment = s.upper()
-        return {"L": "Lawful",
-                "N": "Neutral",
-                "NX": "Neutral (Law/Chaos axis)",
-                "NY": "Neutral (Good/Evil axis)",
-                "C": "Chaotic",
-                "G": "Good",
-                "E": "Evil",
-                "U": "Unaligned",
-                "A": "Any alignment",
+        return {"L": "lawful",
+                "N": "neutral",
+                "NX": "neutral (Law/Chaos axis)",
+                "NY": "neutral (Good/Evil axis)",
+                "C": "chaotic",
+                "G": "good",
+                "E": "evil",
+                "U": "unaligned",
+                "A": "any alignment",
                 }[alignment]
 
 
 def convertAlignList(s):
-    if len(s) == 1:
+    if s is None:
+        return ""
+    elif len(s) == 1:
         return convertAlign(s[0])
     elif len(s) == 2:
         return " ".join([convertAlign(x) for x in s])
     elif len(s) == 3:
         if "NX" in s and "NY" in s and "N" in s:
-            return "Any Neutral Alignment"
+            return "any neutral alignment"
     elif len(s) == 5:
         if "G" not in s:
-            return "Any Non-Good Alignment"
+            return "any non-good alignment"
         elif "E" not in s:
-            return "Any Non-Evil Alignment"
+            return "any non-evil alignment"
         elif "L" not in s:
-            return "Any Non-Lawful Alignment"
+            return "any non-lawful alignment"
         elif "C" not in s:
-            return "Any Non-Chaotic Alignment"
+            return "any non-chaotic alignment"
     elif len(s) == 4:
         if "L" not in s and "NX" not in s:
-            return "Any Chaotic Alignment"
+            return "any chaotic alignment"
         if "G" not in s and "NY" not in s:
-            return "Any Evil Alignment"
+            return "any evil alignment"
         if "C" not in s and "NX" not in s:
-            return "Any Lawful Alignment"
+            return "any lawful alignment"
         if "E" not in s and "NY" not in s:
-            return "Any Good Alignment"
+            return "any good alignment"
 
 def modifyMonster(m,mods):
     for mod in mods:
@@ -498,6 +503,15 @@ def modRepl(s,r,w,f):
         for i in s:
             s[i] = modRepl(s[i],r,w,f)
     return s
+ 
+def createMLink(matchobj):
+    return "<a href=\"/monster/{}\">{}</a>".format(slugify(matchobj.group(1)),matchobj.group(3))
+
+def createILink(matchobj):
+    return "<a href=\"/item/{}\">{}</a>".format(slugify(matchobj.group(1)),matchobj.group(3))
+
+def createSLink(matchobj):
+    return "<i><a href=\"/spell/{}\">{}</a></i>".format(slugify(matchobj.group(1)),matchobj.group(3))
 
 def fixTags(s,m,nohtml=False):
     if '×' in s:
@@ -529,15 +543,19 @@ def fixTags(s,m,nohtml=False):
                 return matchobj.group(1)
         s = re.sub(r'{=(.*?)([/].*?)?}', propRepl, s)
     if not nohtml:
-        s = re.sub(r'{@([bi]) (.*?)}',r'<\1>\2</\1>', s)
-        s = re.sub(r'{@italic (.*?)}',r'<i>\1</i>', s)
-        s = re.sub(r'{@spell (.*?)}', r'<spell>\1</spell>', s)
+        s = re.sub(r'\"(.*?)\"',r'“\1”', s)
         s = re.sub(r'{@link (.*?)\|(.*?)?}', r'<a href="\2">\1</a>', s)
-        def createMLink(matchobj):
-            return "<a href=\"/monster/{}\">{}</a>".format(slugify(matchobj.group(1)),matchobj.group(2))
-        s = re.sub(r'{@creature (.*?)\|\|(.*?)?}', createMLink, s)
+        s = re.sub(r'{@creature ([^}]*?)\|([^}]*?)\|(.*?)?}', createMLink, s)
         s = re.sub(r'{@creature (.*?)(\|.*?)?}', r'<monster>\1</monster>', s)
+        s = re.sub(r'{@item ([^}]*?)\|([^}]*?)\|(.*?)?}', createILink, s)
         s = re.sub(r'{@item (.*?)(\|.*?)?}', r'<item>\1</item>', s)
+        s = re.sub(r'{@spell ([^}]*?)\|([^}]*?)\|(.*?)?}', createSLink, s)
+        s = re.sub(r'{@spell (.*?)(\|.*?)?}', r'<i><spell>\1</spell></i>', s)
+        s = re.sub(r'{@b (.*?)}',r'<b>\1</b>', s)
+        s = re.sub(r'{@i (.*?)}',r'<i>\1</i>', s)
+        s = re.sub(r'{@bold (.*?)}',r'<b>\1</b>', s)
+        s = re.sub(r'{@italic (.*?)}',r'<i>\1</i>', s)
+        s = re.sub('\'','’', s)
     else:
         s = re.sub(r'{@link (.*?)\|(.*?)?}', r'\1 (\2)', s)
 
@@ -697,7 +715,7 @@ def getFriendlySource(source,args=None):
         if srcfound:
             break
         try:
-            with open(books,encoding='utf-8') as f:
+            with open(books,encoding="utf-8") as f:
                 bks = json.load(f)
                 f.close()
             key = list(bks.keys())[0]
@@ -715,7 +733,7 @@ def getFriendlySource(source,args=None):
 def getPublishedSources():
     officialsources = []
     for books in [ "./data/books.json", "./data/adventures.json" ]:
-        with open(books,encoding='utf-8') as f:
+        with open(books,encoding="utf-8") as f:
             bks = json.load(f)
             f.close()
         key = list(bks.keys())[0]
@@ -731,7 +749,7 @@ def getEntryString(e,m,args):
                 if args.nohtml:
                     text += "{}\n".format(fixTags(e['name'],m,args.nohtml))
                 else:
-                    text += "<b>{}</b>\n".format(fixTags(e['name'],m,args.nohtml))
+                    text += "<b>{}.</b>\n".format(fixTags(e['name'],m,args.nohtml))
             elif e["type"] != "item":
                 if args.nohtml:
                     text += "{}. ".format(fixTags(e['name'],m,args.nohtml))
@@ -765,16 +783,16 @@ def getEntryString(e,m,args):
             if "entry" not in e and "entries" in e:
                 e["entry"] = getEntryString(e["entries"],m,args)
             if args.nohtml:
-                text += "• {} {}".format(e["name"]+(":" if e["name"][-1:] not in ".:" else ""),getEntryString(e["entry"],m,args))
+                text += "{} {}".format(fixTags(e['name'],m,args.nohtml)+(":" if e["name"][-1:] not in ".:" else ""),getEntryString(e["entry"],m,args))
             else:
-                text += "• <b>{}</b> {}".format(e["name"]+(":" if e["name"][-1:] not in ".:" else ""),getEntryString(e["entry"],m,args))
+                text += "<b>{}</b> {}".format(fixTags(e['name'],m,args.nohtml)+(":" if e["name"][-1:] not in ".:" else ""),getEntryString(e["entry"],m,args))
         elif e["type"] == "list":
             if "style" in e and e["style"] == "list-hang-notitle":
                 text += getEntryString(e["items"],m,args)
             elif "style" in e and e["style"] == "no-bullets":
                 text += getEntryString(e["items"],m,args)
             else:
-                text += "\n".join(["• {}".format(getEntryString(x,m,args)) for x in e["items"]])
+                text += "\n".join(["{}".format(getEntryString(x,m,args)) for x in e["items"]])
         elif e["type"] == "inset":
             if "name" in e:
                 text += "\n"
@@ -799,13 +817,13 @@ def getEntryString(e,m,args):
         elif e["type"] == "spellcasting":
             text += "\n".join(fixTags(x,m,args.nohtml) for x in e["headerEntries"])
             if "will" in e:
-                text += "\n• At will: " + ", ".join(fixTags(x,m,args.nohtml) for x in e["will"])
+                text += "\nAt will: " + ", ".join(fixTags(x,m,args.nohtml) for x in e["will"])
             if "daily" in e:
                 for k in e["daily"]:
                     if k.endswith("e"):
-                        text += "\n• {}/day each: {}".format(k[:-1],", ".join(fixTags(x,m,args.nohtml) for x in e["daily"][k]))
+                        text += "\n{}/day each: {}".format(k[:-1],", ".join(fixTags(x,m,args.nohtml) for x in e["daily"][k]))
                     else:
-                        text += "\n• {}/day: {}".format(k,", ".join(fixTags(x,m,args.nohtml) for x in e["daily"][k]))
+                        text += "\n{}/day: {}".format(k,", ".join(fixTags(x,m,args.nohtml) for x in e["daily"][k]))
             if "footerEntries" in e:
                 text += "\n".join(fixTags(x,m,args.nohtml) for x in e["footerEntries"])
         elif e["type"] == "inline":
