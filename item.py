@@ -46,6 +46,7 @@ def parseItem(m, compendium, args):
     else:
         heading = ET.SubElement(itm, 'heading')
     headings = []
+    mtype = ""
 
     typ = ET.SubElement(itm, 'type')
     if 'type' in m:
@@ -92,20 +93,17 @@ def parseItem(m, compendium, args):
         magic = ET.SubElement(itm, 'magic')
         magic.text = "1"
         headings.append("Wondrous item (tattoo)" if 'tattoo' in m and m['tattoo'] else "Wondrous item")
+        mtype = "Wondrous item (tattoo)" if 'tattoo' in m and m['tattoo'] else "Wondrous item"
         if 'type' not in m:
             typ.text = 'W'
 
-    if 'tier' in m: headings.append(m['tier']) 
+    #if 'tier' in m: headings.append(m['tier']) 
 
-    if 'curse' in m and m['curse']: headings.append("Cursed item")
+    #if 'curse' in m and m['curse']: headings.append("Cursed item")
 
-    weight = ET.SubElement(itm, 'weight')
-    if 'weight' in m: weight.text = str(m['weight'])
-
-    if 'rarity' in m and m['rarity'] != 'None' and m['rarity'] != 'Unknown' and not args.nohtml:
-        rarity = ET.SubElement(itm, 'rarity')
-        rarity.text = str(m['rarity']).title()
-        if m['rarity'] != 'None' and m['rarity'] != 'Unknown': headings.append(str(m['rarity']).title())
+    if 'weight' in m: 
+        weight = ET.SubElement(itm, 'weight')
+        weight.text = str(m['weight'])
 
 
     if 'value' in m:
@@ -123,11 +121,13 @@ def parseItem(m, compendium, args):
         headings.append('Staff')
         if 'type' not in m or m['type'] == 'SCF':
             typ.text = 'ST'
+            mtype = "Staff"
 
     if 'wand' in m and m['wand']:
         headings.append('Wand')
         if 'type' not in m or m['type'] == 'SCF':
             typ.text = 'WD'
+            mtype = "Wand"
 
     if 'weapon' in m and m['weapon'] and 'weaponCategory' in m:
         headings.append(m['weaponCategory'] + " Weapon")
@@ -137,8 +137,8 @@ def parseItem(m, compendium, args):
             else:
                 m['property'] = ['M']
 
-    prop = ET.SubElement(itm, 'property')
     if 'property' in m: 
+        prop = ET.SubElement(itm, 'property')
         if 'AF' in m['property']:
             headings.append("Ammunication (futuristic)")
             m['property'] = list(filter(lambda x: (x != 'AF'), m['property']))
@@ -157,56 +157,97 @@ def parseItem(m, compendium, args):
     if 'type' in m:
         if m['type'] == 'LA':
             headings.append("Light Armor")
+            mtype = "Armor"
         elif m['type'] == 'MA':
             headings.append("Medium Armor")
+            mtype = "Armor"
         elif m['type'] == 'HA':
             headings.append("Heavy Armor")
+            mtype = "Armor"
         elif m['type'] == 'S':
             headings.append("Shield")
+            mtype = "Armor (shield)"
         elif m['type'] == 'SCF':
             headings.append("Spellcasting Focus")
         elif m['type'] == 'R':
             headings.append('Ranged Weapon')
+            mtype = "Weapon"
         elif m['type'] == 'M':
             headings.append('Melee Weapon')
+            mtype = "Weapon"
         elif m['type'] == 'A':
             headings.append('Ammunition')
+            mtype = "Weapon"
         elif m['type'] == 'G':
             headings.append('Adventuring Gear')
+            mtype = "Adventuring Gear"
         elif m['type'] == 'T':
             headings.append('Tools')
+            mtype = "Tools"
         elif m['type'] == 'AT':
             headings.append('Artisan Tools')
+            mtype = "Artisan Tools"
         elif m['type'] == 'GS':
             headings.append('Gaming Set')
+            mtype = "Gaming Set"
         elif m['type'] == 'TG':
             headings.append('Trade Good')
+            mtype = "Trade Good"
         elif m['type'] == 'INS':
             headings.append('Instrument')
+            mtype = "Instrument"
         elif m['type'] == 'MNT':
             headings.append('Mount')
+            mtype = "Mount"
         elif m['type'] == 'VEH':
             headings.append('Vehicle (land)')
+            mtype = "Vehicle (land)"
         elif m['type'] == 'AIR':
             headings.append('Vehicle (air)')
+            mtype = "Vehicle (air)"
         elif m['type'] == 'SHP':
             headings.append('Vehicle (water)')
+            mtype = "Vehicle (water)"
         elif m['type'] == 'TAH':
             headings.append('Tack and Harness')
+            mtype = "Tack and Harness"
         elif m['type'] == 'FD':
             headings.append('Food and Drink')
+            mtype = "Food and Drink"
         elif m['type'] == 'MR':
             headings.append('Magic Rune')
+            mtype = "Magic Rune"
         elif m['type'] == 'OTH':
             headings.append('Other')
+            mtype = "Adventuring Gear"
+        elif m['type'] == "P":
+            mtype = "Potion"
+        elif m['type'] == "RG":
+            mtype = "Ring"
+        elif m['type'] == "SC":
+            mtype = "Scroll"
+        elif m['type'] == "$":
+            mtype = "Wealth"
+        elif m['type'] == "RD":
+            mtype = "Rod"
+
+    attune = ""
     if not args.nohtml:
-        attunement = ET.SubElement(itm, 'attunement')
         if 'reqAttune' in m:
+            attunement = ET.SubElement(itm, 'attunement')
             if m['reqAttune'] == True:
                 attunement.text = "Requires Attunement"
             else:
                 attunement.text = "Requires Attunement " + m['reqAttune']
+            attune = " ({})".format(attunement.text)
             headings.append("({})".format(attunement.text))
+
+    rare = "Mundane"
+    if 'rarity' in m and m['rarity'] != 'None' and m['rarity'] != 'Unknown' and not args.nohtml:
+        rarity = ET.SubElement(itm, 'rarity')
+        rarity.text = str(m['rarity']).title()
+        rare = str(m['rarity']).title()
+        if m['rarity'] != 'None' and m['rarity'] != 'Unknown': headings.append(str(m['rarity']).title())
 
     if 'dmg1' in m:
         dmg1 = ET.SubElement(itm, 'dmg1')
@@ -298,7 +339,24 @@ def parseItem(m, compendium, args):
         if m['type'] == "HA":
             m['entries'].append("If the wearer has a Strength score lower than {}, their speed is reduced by 10 feet.".format(m['strength']))
 
-    heading.text = ", ".join(headings)
+    baseItems = ""
+    if 'baseItem' in m:
+        baseItems += m['baseItem']
+        if m['baseItem'] is str:
+            baseItems = m['baseItem']
+
+    if mtype == "Weapon" or mtype == "Armor":
+        if rare != "Mundane":
+            heading.text = "{} ({}), {}{}".format(mtype, baseItems.lower(), rare.lower(), attune.lower())
+        else:
+            heading.text = "{}({})".format(mtype, baseItems.lower())
+    else:
+        if rare != "Mundane":
+            heading.text = "{}, {}{}".format(mtype, rare.lower(), attune.lower())
+        else:
+            heading.text = mtype
+
+    #heading.text = ", ".join(headings)
     
 #    if args.nohtml:
 #        try:
@@ -375,13 +433,13 @@ def parseItem(m, compendium, args):
             imagetag = ET.SubElement(itm, 'image')
             imagetag.text = slug + ".jpg"
 
-        sourcetext = "<i>{}</i>, page {}".format(
+        sourcetext = "{}, page {}".format(
             utils.getFriendlySource(m['source'],args), m['page']) if 'page' in m and m['page'] != 0 else utils.getFriendlySource(m['source'],args)
 
         if 'otherSources' in m and m["otherSources"] is not None:
             for s in m["otherSources"]:
                 sourcetext += ", "
-                sourcetext += "<i>{}</i>, page {}".format(
+                sourcetext += "{}, page {}".format(
                     utils.getFriendlySource(s["source"],args), s["page"]) if 'page' in s and s["page"] != 0 else utils.getFriendlySource(s["source"],args)
         if 'entries' in m:
             if args.nohtml:
@@ -401,7 +459,7 @@ def parseItem(m, compendium, args):
 
     if 'entries' in m:
         for e in m['entries']:
-            if type(e) == dict and e['type'] == 'table':
+            if type(e) == dict and 'type' in e and e['type'] == 'table':
                 if 'caption' in e:
                     bodyText.text += "{}\n".format(e['caption'])
                 if 'colLabels' in e:
@@ -431,7 +489,7 @@ def parseItem(m, compendium, args):
                         subentries.append(utils.fixTags(sube,m,args.nohtml))
                     elif type(sube) == dict and "text" in sube:
                         subentries.append(utils.fixTags(sube["text"],m,args.nohtml))
-                    elif type(sube) == dict and sube['type'] == 'table':
+                    elif type(sube) == dict and 'type' in sube and sube['type'] == 'table':
                         if 'caption' in sube:
                             subentries.append("{}".format(sube['caption']))
                         if 'colLabels' in sube:
@@ -449,16 +507,16 @@ def parseItem(m, compendium, args):
                                 else:
                                     rowthing.append(utils.fixTags(str(r),m,args.nohtml))
                             subentries.append(" | ".join(rowthing))
-                    elif type(sube) == dict and sube["type"] == "list" and "style" in sube and sube["style"] == "list-hang-notitle":
+                    elif type(sube) == dict and "type" in sube and sube["type"] == "list" and "style" in sube and sube["style"] == "list-hang-notitle":
                         for item in sube["items"]:
                             if type(item) == dict and 'type' in item and item['type'] == 'item':
                                 if args.nohtml:
-                                    subentries.append("&lt;b&gt;•&lt;/b&gt; {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
+                                    subentries.append("<b>•</b> {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
                                 else:
-                                    subentries.append("&lt;b&gt;•&lt;/b&gt; <i>{}:</i> {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
+                                    subentries.append("<b>•</b> <i>{}:</i> {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
                             else:
-                                subentries.append("&lt;b&gt;•&lt;/b&gt; {}".format(utils.fixTags(item,m,args.nohtml)))
-                    elif type(sube) == dict and sube["type"] == "list":
+                                subentries.append("<b>•</b> {}".format(utils.fixTags(item,m,args.nohtml)))
+                    elif type(sube) == dict and "type" in sube and sube["type"] == "list":
                         for item in sube["items"]:
                             if type(item) == dict and "entries" in item:
                                 ssubentries = []                    
@@ -470,17 +528,17 @@ def parseItem(m, compendium, args):
                                     subentries.append("\n".join(ssubentries))
                             elif type(item) == dict and 'type' in item and item['type'] == 'item':
                                 if args.nohtml:
-                                    subentries.append("&lt;b&gt;•&lt;/b&gt; {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
+                                    subentries.append("<b>•</b> {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
                                 else:
-                                    subentries.append("&lt;b&gt;•&lt;/b&gt; <i>{}:</i> {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
+                                    subentries.append("<b>•</b> <i>{}:</i> {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)))
                             elif type(item) == dict and item["type"] == "list" and "style" in item and item["style"] == "list-hang-notitle":
                                 for subitem in item["items"]:
                                     if args.nohtml:
-                                        subentries.append("&lt;b&gt;•&lt;/b&gt; {}: {}".format(subitem["name"],utils.fixTags(subitem["entry"],m,args.nohtml)) + "\n")
+                                        subentries.append("<b>•</b> {}: {}".format(subitem["name"],utils.fixTags(subitem["entry"],m,args.nohtml)) + "\n")
                                     else:
-                                        subentries.append("&lt;b&gt;•&lt;/b&gt; <i>{}:</i> {}".format(subitem["name"],utils.fixTags(subitem["entry"],m,args.nohtml)) + "\n")
+                                        subentries.append("<b>•</b> <i>{}:</i> {}".format(subitem["name"],utils.fixTags(subitem["entry"],m,args.nohtml)) + "\n")
                             else:
-                                subentries.append("&lt;b&gt;•&lt;/b&gt; {}".format(utils.fixTags(item,m,args.nohtml)))
+                                subentries.append("<b>•</b> {}".format(utils.fixTags(item,m,args.nohtml)))
                 bodyText.text += "\n".join(subentries) + "\n"
             else:
                 if type(e) == dict and e["type"] == "list" and "style" in e and e["style"] == "list-hang-notitle":
@@ -489,11 +547,11 @@ def parseItem(m, compendium, args):
                             if "entry" not in item:
                                 item["entry"] = ""
                             if args.nohtml:
-                                bodyText.text += "&lt;b&gt;•&lt;/b&gt; {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)) + "\n"
+                                bodyText.text += "<b>•</b> {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)) + "\n"
                             else:
-                                bodyText.text += "&lt;b&gt;•&lt;/b&gt; <i>{}:</i> {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)) + "\n"
+                                bodyText.text += "<b>•</b> <i>{}:</i> {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)) + "\n"
                         else:
-                            bodyText.text += "&lt;b&gt;•&lt;/b&gt; {}".format(utils.fixTags(item,m,args.nohtml)) + "\n"
+                            bodyText.text += "<b>•</b> {}".format(utils.fixTags(item,m,args.nohtml)) + "\n"
                 elif type(e) == dict and e["type"] == "list":
                     for item in e["items"]:
                         if "entries" in item:
@@ -505,12 +563,14 @@ def parseItem(m, compendium, args):
                                     subentries.append(utils.fixTags(sube["text"],m,args.nohtml))
                                 bodyText.text += "\n".join(subentries) + "\n"
                         else:
-                            bodyText.text += "&lt;b&gt;•&lt;/b&gt; {}".format(utils.fixTags(item,m,args.nohtml)) + "\n"
+                            bodyText.text += "<b>•</b> {}".format(utils.fixTags(item,m,args.nohtml)) + "\n"
                 else:
-                    bodyText.text += utils.fixTags(e,m,args.nohtml) + "\n"
+                    if "<b>Source:" in e:
+                        bodyText.text = bodyText.text.strip() + "\n"
+                    bodyText.text += utils.fixTags(e,m,args.nohtml) + "\n    "
 
-    bodyText.text = bodyText.text.rstrip()
-    for match in re.finditer(r'([0-9])+[dD]([0-9])+([ ]?[-+][ ]?[0-9]+)?',bodyText.text):
-        if not itm.find("./[roll='{}']".format(match.group(0))):
-            roll = ET.SubElement(itm, 'roll')
-            roll.text = "{}".format(match.group(0)).replace(' ','')
+    bodyText.text = bodyText.text.strip()
+    #for match in re.finditer(r'([0-9])+[dD]([0-9])+([ ]?[-+][ ]?[0-9]+)?',bodyText.text):
+    #    if not itm.find("./[roll='{}']".format(match.group(0))):
+            #roll = ET.SubElement(itm, 'roll')
+            #roll.text = "{}".format(match.group(0)).replace(' ','')

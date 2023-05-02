@@ -72,6 +72,7 @@ def remove5eShit(s):
     s = re.sub(r'{@atk ms}', r'<i>Melee Spell Attack:</i>', s)
     s = re.sub(r'{@atk rs}', r'<i>Ranged Spell Attack:</i>', s)
     s = re.sub(r'{@atk mw,rw}', r'<i>Melee or Ranged Weapon Attack:</i>', s)
+    s = re.sub(r'{@atk ms,rs}', r'<i>Melee or Ranged Spell Attack:</i>', s)
     s = re.sub(r'{@atk r}', r'<i>Ranged Attack:</i>', s)
     s = re.sub(r'{@atk m}', r'<i>Melee Attack:</i>', s)
     s = re.sub(r'{@recharge (.*?)}', r'(Recharge \1-6)', s)
@@ -129,15 +130,15 @@ def convertAlign(s):
             return " ".join([convertAlign(x) for x in s['alignment']])
     else:
         alignment = s.upper()
-        return {"L": "lawful",
-                "N": "neutral",
+        return {"L": "Lawful",
+                "N": "Neutral",
                 "NX": "neutral (Law/Chaos axis)",
                 "NY": "neutral (Good/Evil axis)",
-                "C": "chaotic",
-                "G": "good",
-                "E": "evil",
-                "U": "unaligned",
-                "A": "any alignment",
+                "C": "Chaotic",
+                "G": "Good",
+                "E": "Evil",
+                "U": "Unaligned",
+                "A": "Any Alignment",
                 }[alignment]
 
 
@@ -514,8 +515,8 @@ def createSLink(matchobj):
     return "<i><a href=\"/spell/{}\">{}</a></i>".format(slugify(matchobj.group(1)),matchobj.group(3))
 
 def fixTags(s,m,nohtml=False):
-    if '×' in s:
-        s=s.replace('×','x')
+    #if '×' in s:
+    #    s=s.replace('×','x')
     if '{=' in s:
         def propRepl(matchobj):
             if matchobj.group(1) in m:
@@ -552,8 +553,8 @@ def fixTags(s,m,nohtml=False):
         s = re.sub(r'{@spell ([^}]*?)\|([^}]*?)\|(.*?)?}', createSLink, s)
         s = re.sub(r'{@spell (.*?)(\|.*?)?}', r'<i><spell>\1</spell></i>', s)
         s = re.sub(r'{@b (.*?)}',r'<b>\1</b>', s)
-        s = re.sub(r'{@i (.*?)}',r'<i>\1</i>', s)
         s = re.sub(r'{@bold (.*?)}',r'<b>\1</b>', s)
+        s = re.sub(r'{@i (.*?)}',r'<i>\1</i>', s)
         s = re.sub(r'{@italic (.*?)}',r'<i>\1</i>', s)
         s = re.sub('\'','’', s)
     else:
@@ -697,6 +698,12 @@ def getFriendlySource(source,args=None):
         friendly = "Essentials Kit"
     elif source == "TCE":
         friendly = "Tasha's Cauldron of Everything"
+    elif source == "SCC":
+        friendly = "Strixhaven: A Curriculum of Chaos"
+    elif source == "MPMM":
+        friendly = "Mordenkainen Presents: Monsters to the Multiverse"
+    elif source == "TDCSR":
+        friendly = "Tal’Dorei Campaign Setting Reborn"
     elif source.startswith("UA"):
         friendly = re.sub(r"(\w)([A-Z])", r"\1 \2", friendly)
         friendly = re.sub(r"U A", r"Unearthed Arcana: ", friendly)
@@ -705,11 +712,15 @@ def getFriendlySource(source,args=None):
         friendly = re.sub(r"A L", r"Adventurers League: ", friendly)
     else:
         srcfound = False
+    friendly = "<i>" + friendly + "</i>"
     if args and args.filemeta and 'sources' in args.filemeta:
         for metasource in args.filemeta['sources']:
             if metasource['json'] == source:
-                friendly = metasource['full']
+                friendly = "<i>" + metasource['full'] + "</i>"
                 srcfound = True
+                if "authors" in metasource:
+                    authorList = parseRIV(metasource, 'authors')
+                    friendly += ", " + ", ".join(authorList)
                 break
     for books in allbooks:
         if srcfound:
@@ -792,7 +803,7 @@ def getEntryString(e,m,args):
             elif "style" in e and e["style"] == "no-bullets":
                 text += getEntryString(e["items"],m,args)
             else:
-                text += "\n".join(["{}".format(getEntryString(x,m,args)) for x in e["items"]])
+                text += "\n".join(["<b>•</b> {}".format(getEntryString(x,m,args)) for x in e["items"]])
         elif e["type"] == "inset":
             if "name" in e:
                 text += "\n"
@@ -838,7 +849,7 @@ def getEntryString(e,m,args):
             print(e)
         return text
     elif type(e) == list:
-        return "\n".join([getEntryString(x,m,args) for x in e])
+        return "\n    ".join([getEntryString(x,m,args) for x in e])
     else:
         return fixTags(str(e),m,args.nohtml)
         

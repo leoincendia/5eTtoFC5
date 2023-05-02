@@ -9,7 +9,7 @@ import requests
 from slugify import slugify
 from shutil import copyfile
 
-def parseMonster(m, compendium, args):
+def parseMonster(m, compendium, args, fluff, lGroup):
     if '_copy' in m:
         if args.verbose:
             print("COPY: " + m['name'] + " from " + m['_copy']['name'] + " in " + m['_copy']['source'])
@@ -85,14 +85,16 @@ def parseMonster(m, compendium, args):
     name = ET.SubElement(monster, 'name')
     name.text = utils.fixTags(m['name'],m,args.nohtml)
 
+    #print(ET.tostring(name).decode())
+
     size = ET.SubElement(monster, 'size')
-    size.text = m['size']
+    size.text = m['size'][0]
 
     typ = ET.SubElement(monster, 'type')
     if isinstance(m['type'], dict):
         if 'swarmSize' in m['type']:
-            typ.text = "swarm of {} {}s".format(
-                utils.convertSize(m['size']), m['type']['type'])
+            typ.text = "Swarm of {} {}s".format(
+                utils.convertSize(m['type']['swarmSize']), str.capitalize(m['type']['type']))
         elif 'tags' in m['type']:
             subtypes = []
             for tag in m['type']['tags']:
@@ -100,16 +102,15 @@ def parseMonster(m, compendium, args):
                     subtypes.append(tag)
                 else:
                     subtypes.append(tag['prefix'] + tag['tag'])
-            typ.text = "{} ({})".format(m['type']['type'], ", ".join(subtypes))
+            typ.text = "{} ({})".format(str.capitalize(m['type']['type']), str.capitalize(", ".join(subtypes)))
         else:
-            typ.text = m['type']['type']
+            typ.text = str.capitalize(m['type']['type'])
     else:
-        typ.text = m['type']
+        typ.text = str.capitalize(m['type'])
 
-    alignment = ET.SubElement(monster, 'alignment')
-    if 'alignment' not in m:
-        m['alignment'] = [ 'A' ]
-    alignment.text = utils.convertAlignList(m['alignment'])
+    if 'alignment' in m:
+        alignment = ET.SubElement(monster, 'alignment')
+        alignment.text = utils.convertAlignList(m['alignment'])
 
     ac = ET.SubElement(monster, 'ac')
     acstr = []
@@ -361,7 +362,8 @@ def parseMonster(m, compendium, args):
         elif args.addimgs and os.path.isfile(os.path.join(args.tempdir,"monsters", "token_" + slug + ".jpg")):
             imagetag = ET.SubElement(monster, 'token')
             imagetag.text = "token_" + slug + ".jpg"
-        sourcetext = "<i>{}</i>, page {}".format(
+
+        sourcetext = "{}, page {}".format(
             utils.getFriendlySource(m['source'],args), m['page']) if 'page' in m and m['page'] != 0 else utils.getFriendlySource(m['source'],args)
 
         if 'otherSources' in m and m["otherSources"] is not None:
@@ -369,7 +371,7 @@ def parseMonster(m, compendium, args):
                 if "source" not in s:
                     continue
                 sourcetext += "; "
-                sourcetext += "<i>{}</i>, page {}".format(
+                sourcetext += "{}, page {}".format(
                     utils.getFriendlySource(s["source"],args), s["page"]) if 'page' in s and s["page"] != 0 else utils.getFriendlySource(s["source"],args)
         #trait = ET.SubElement(monster, 'trait')
         #name = ET.SubElement(trait, 'name')
@@ -390,21 +392,39 @@ def parseMonster(m, compendium, args):
             name.text = utils.remove5eShit(t['name']) + "."
             if "entries" not in t:
                 t["entries"] = []
-            for e in utils.getEntryString(t["entries"],m,args).split("\n"):
-                text = ET.SubElement(trait, 'text')
-                text.text = e
-
+            text = ET.SubElement(trait, 'text')
+            text.text = utils.getEntryString(t["entries"],m,args)
+            #for e in utils.getEntryString(t["entries"],m,args).split("\n"):
+            #    text = ET.SubElement(trait, 'text')
+            #    text.text = e
+                      
+    if 'action' in m and m['action'] is not None:
+        for t in m['action']:
+            action = ET.SubElement(monster, 'action')
+            if 'name' in t:
+                name = ET.SubElement(action, 'name')
+                name.text = utils.remove5eShit(t['name']) +"."
+            text = ET.SubElement(action, 'text')
+            text.text = utils.getEntryString(t["entries"],m,args)
+            #for e in utils.getEntryString(t["entries"],m,args).split("\n"):
+            #    text = ET.SubElement(action, 'text')
+            #    text.text = e
+                #for match in re.finditer(r'(((\+|\-)?[0-9]*) to hit.*?|DC [0-9]+ .*? saving throw.*?)\(([0-9Dd\+\- ]+)\) .*? damage',e):
+                #    if match.group(4):
+                #        attack = ET.SubElement(action, 'attack')
+                #        attack.text = "{}|{}|{}".format(utils.remove5eShit(t['name']) if 'name' in t else "",match.group(2).replace(' ','') if match.group(2) else "",match.group(4).replace(' ',''))
+     
     if 'spellcasting' in m:
         spells = []
         slots = []
         for s in m['spellcasting']:
-            trait = ET.SubElement(monster, 'trait')
+            trait = ET.SubElement(monster, 'action')
             name = ET.SubElement(trait, 'name')
             name.text = utils.remove5eShit(s['name']) + "."
             for e in s['headerEntries']:
                 text = ET.SubElement(trait, 'text')
                 text.text = utils.fixTags(e,m,args.nohtml)
-            
+            trait = ET.SubElement(monster, 'action')
             if "will" in s:
                 text = ET.SubElement(trait, 'text')
                 willspells = s['will']
@@ -458,25 +478,12 @@ def parseMonster(m, compendium, args):
                     text = ET.SubElement(trait, 'text')
                     text.text = utils.fixTags(e,m,args.nohtml)
 
-    if 'action' in m and m['action'] is not None:
-        for t in m['action']:
-            action = ET.SubElement(monster, 'action')
-            if 'name' in t:
-                name = ET.SubElement(action, 'name')
-                name.text = utils.remove5eShit(t['name']) +"."
-            for e in utils.getEntryString(t["entries"],m,args).split("\n"):
-                text = ET.SubElement(action, 'text')
-                text.text = e
-                #for match in re.finditer(r'(((\+|\-)?[0-9]*) to hit.*?|DC [0-9]+ .*? saving throw.*?)\(([0-9Dd\+\- ]+)\) .*? damage',e):
-                #    if match.group(4):
-                #        attack = ET.SubElement(action, 'attack')
-                #        attack.text = "{}|{}|{}".format(utils.remove5eShit(t['name']) if 'name' in t else "",match.group(2).replace(' ','') if match.group(2) else "",match.group(4).replace(' ',''))
     if 'bonus' in m and m['bonus'] is not None:
         action = ET.SubElement(monster, 'action')
         name = ET.SubElement(action, 'name')
-        name.text = "BONUS ACTIONS"
+        name.text = "Bonus Actions"
         if not args.nohtml:
-            name.text = "<u>{}</u>".format(name.text)
+            name.text = "<u><b>{}</b></u>".format(name.text)
         for t in m['bonus']:
             action = ET.SubElement(monster, 'action')
             if 'name' in t:
@@ -485,10 +492,10 @@ def parseMonster(m, compendium, args):
             for e in utils.getEntryString(t["entries"],m,args).split("\n"):
                 text = ET.SubElement(action, 'text')
                 text.text = e
-                for match in re.finditer(r'(((\+|\-)?[0-9]*) to hit.*?|DC [0-9]+ .*? saving throw.*?)\(([0-9Dd\+\- ]+)\) .*? damage',e):
-                    if match.group(4):
-                        attack = ET.SubElement(action, 'attack')
-                        attack.text = "{}|{}|{}".format(utils.remove5eShit(t['name']) if 'name' in t else "",match.group(2).replace(' ','') if match.group(2) else "",match.group(4).replace(' ',''))
+                #for match in re.finditer(r'(((\+|\-)?[0-9]*) to hit.*?|DC [0-9]+ .*? saving throw.*?)\(([0-9Dd\+\- ]+)\) .*? damage',e):
+                #    if match.group(4):
+                #        attack = ET.SubElement(action, 'attack')
+                #        attack.text = "{}|{}|{}".format(utils.remove5eShit(t['name']) if 'name' in t else "",match.group(2).replace(' ','') if match.group(2) else "",match.group(4).replace(' ',''))
 
     if 'reaction' in m and m['reaction'] is not None:
         for t in m['reaction']:
@@ -520,18 +527,15 @@ def parseMonster(m, compendium, args):
         else:
             text = ET.SubElement(legendary, 'text')
             if "isNamedCreature" in m and m['isNamedCreature']:
-                text.text = "{0} can take {1:d} legendary action{2}, choosing from the options below. Only one legendary action can be used at a time and only at the end of another creature’s turn. {0} regains spent legendary action{2} at the start of its turn.".format(m['name'].split(' ', 1)[0],len(m['legendary']),"s" if len(m['legendary']) > 1 else "")
+                text.text = "{0} can take 3 legendary actions, choosing from the options below. Only one legendary action can be used at a time and only at the end of another creature’s turn. {0} regains spent legendary actions at the start of its turn.".format(utils.fixTags(m['name'],m,args.nohtml).split(',', 1)[0])
             else:
-                text.text = "The {0} can take {1:d} legendary action{2}, choosing from the options below. Only one legendary action can be used at a time and only at the end of another creature’s turn. The {0} regains spent legendary action{2} at the start of its turn.".format(m['type'] if type(m['type']) == str else "{} ({})".format(m['type']['type'],", ".join(m['type']['tags'])) if 'tags' in m['type'] else m['type']['type'],len(m['legendary']),"s" if len(m['legendary']) > 1 else "")
+                text.text = "The {0} can take 3 legendary actions, choosing from the options below. Only one legendary action can be used at a time and only at the end of another creature’s turn. The {0} regains spent legendary actions at the start of its turn.".format(str.lower(m['name']))
+        legendary = ET.SubElement(monster, 'legendary')
         for t in m['legendary']:
-            legendary = ET.SubElement(monster, 'legendary')
-            name = ET.SubElement(legendary, 'name')
+            text = ET.SubElement(legendary, 'text')
             if 'name' not in t:
                 t['name'] = ""
-            name.text = utils.remove5eShit(t['name']) + "."
-            for e in utils.getEntryString(t["entries"],m,args).split("\n"):
-                text = ET.SubElement(legendary, 'text')
-                text.text = e
+            text.text = "<b>" + utils.remove5eShit(t['name']) + ".</b> " + utils.getEntryString(t["entries"],m,args)
 
     if 'mythic' in m:
         mythic = ET.SubElement(monster, 'legendary')
@@ -555,63 +559,93 @@ def parseMonster(m, compendium, args):
                 text = ET.SubElement(mythic, "text")
                 text.text = e
 
+    description = ET.SubElement(monster, 'description')
+    description.text = ''
+    if 'fluff' in m and not args.srd:
+        for e1 in fluff:
+            if e1['name'] != m['name']:
+                continue
+
+            if 'entries' in e1:
+                description.text += getDesc(e1['entries'],m)
+
     if 'legendaryGroup' in m:
-        with open("./data/bestiary/legendarygroups.json",encoding="utf-8") as f:
-            meta = json.load(f)
-            f.close()
-        for l in meta['legendaryGroup']:
+        named = ""
+        if "isNamedCreature" in m and m['isNamedCreature']:
+            named = "-s"
+        description.text += "\n<i><a href=\"/monster/" + slugify(m['name'].split(',', 1)[0]) + named + "-lair\">Has Lair Actions</a></i>"
+    if sourcetext: description.text += "\n<b>Source:</b> {}".format(sourcetext)
+    if args.nohtml:
+        description.text = re.sub('</?(i|b|spell)>', '', description.text)
+    if 'environment' in m:
+        environment = ET.SubElement(monster, 'environment')
+        environment.text = ", ".join([x for x in m['environment']])
+
+    if 'legendaryGroup' in m:
+        #with open("./data/legendarygroups.json",encoding="utf-8") as f:
+        #    meta = json.load(f)
+        #    f.close()
+        for l in lGroup: #meta['legendaryGroup']:
             if l['name'] != m['legendaryGroup']['name']:
                 continue
+            lair = ET.SubElement(compendium, 'monster')
+            lname = ET.SubElement(lair, 'name')
+            named = ""
+            if "isNamedCreature" in m and m['isNamedCreature']:
+               named = "’s"
+            lname.text = utils.fixTags(m['name'],m,args.nohtml).split(',', 1)[0] + named + " Lair"
+            lsize = ET.SubElement(lair, 'size')
+            lsize.text = "L"
+            ltype = ET.SubElement(lair, 'type')
+            ltype.text = "Lair"
             if 'lairActions' in l:
-                legendary = ET.SubElement(monster, 'legendary')
-                name = ET.SubElement(legendary, 'name')
-                name.text = "LAIR ACTIONS"
+                legendary = ET.SubElement(lair, 'trait')
+                name = ET.SubElement(legendary, 'text')
+                name.text = "Lair Actions"
                 if not args.nohtml:
-                    name.text = "<u>{}</u>".format(name.text)
-                legendary = ET.SubElement(monster, 'legendary')
+                    name.text = "<u><b>{}</b></u>".format(name.text)
                 for t in l['lairActions']:
                     if type(t) == str:
                         text = ET.SubElement(legendary, 'text')
                         text.text = utils.fixTags(t,m,args.nohtml)
                         continue
                     if 'name' in t:
-                        name = ET.SubElement(legendary, 'name')
+                        name = ET.SubElement(legendary, 'text')
                         name.text = "Lair Action: " + utils.remove5eShit(t['name'])
                     if t['type'] == 'list':
                         for i in t['items']:
                             text = ET.SubElement(legendary, 'text')
-                            text.text = "&lt;b&gt;•&lt;/b&gt; " + utils.fixTags(i,m,args.nohtml)
+                            text.text = "<b>•</b> <i><b>" + i["name"] + "</b></i> " + utils.fixTags(i["entry"],m,args.nohtml)
                         continue
                     for e in utils.getEntryString(t["entries"],m,args).split("\n"):
                         text = ET.SubElement(legendary, 'text')
                         text.text = e
 
             if 'regionalEffects' in l:
-                legendary = ET.SubElement(monster, 'legendary')
-                name = ET.SubElement(legendary, 'name')
-                name.text = "REGIONAL EFFECTS"
+                legendary = ET.SubElement(lair, 'trait')
+                name = ET.SubElement(legendary, 'text')
+                name.text = "Regional Effects"
                 if not args.nohtml:
-                    name.text = "<u>{}</u>".format(name.text)
-                legendary = ET.SubElement(monster, 'legendary')
+                    name.text = "<u><b>{}</b></u>".format(name.text)
                 for t in l['regionalEffects']:
                     if type(t) == str:
                         text = ET.SubElement(legendary, 'text')
                         text.text = utils.fixTags(t,m,args.nohtml)
                         continue
                     if 'name' in t:
-                        name = ET.SubElement(legendary, 'name')
+                        name = ET.SubElement(legendary, 'text')
                         name.text = "Regional Effect: " + utils.remove5eShit(t['name'])
                     if t['type'] == 'list':
                         for i in t['items']:
                             text = ET.SubElement(legendary, 'text')
-                            text.text = "&lt;b&gt;•&lt;/b&gt; " + utils.fixTags(i,m,args.nohtml)
+                            text.text = "<b>•</b> <i><b>" + i["name"] + "</b></i> " + utils.fixTags(i["entry"],m,args.nohtml)
                         continue
-                    #legendary = ET.SubElement(monster, 'legendary')
+                    #legendary = ET.SubElement(monster, 'trait')
                     for e in utils.getEntryString(t["entries"],m,args).split("\n"):
                         text = ET.SubElement(legendary, 'text')
                         text.text = e
             if 'mythicEncounter' in l:
-                mythic = ET.SubElement(monster, 'legendary')
+                mythic = ET.SubElement(lair, 'trait')
                 name = ET.SubElement(mythic, 'name')
                 name.text = "{} as a Mythic Encounter".format(m["name"])
                 if not args.nohtml:
@@ -621,20 +655,10 @@ def parseMonster(m, compendium, args):
                 for e in utils.getEntryString(l["mythicEncounter"],m,args).split("\n"):
                     text = ET.SubElement(mythic, 'text')
                     text.text = e
-
-    description = ET.SubElement(monster, 'description')
-    description.text = ''
-    if 'fluff' in m and not args.srd:
-        e1 = m['fluff']
-        description.text += getDesc(e1['entries'],m)
-
-    if sourcetext: description.text += "\n<b>Source:</b> {}".format(sourcetext)
-    if args.nohtml:
-        description.text = re.sub('</?(i|b|spell)>', '', description.text)
-    if 'environment' in m:
-        environment = ET.SubElement(monster, 'environment')
-        environment.text = ", ".join([x for x in m['environment']])
-    # print(m['name'])
+            ldescription = ET.SubElement(lair, 'description')
+            ldescription.text = ""
+            if sourcetext: ldescription.text += "\n\n<b>Source:</b> " + sourcetext.rstrip("123456790") + str(l["page"])
+            ldescription.text += "\n<b>Occupant:</b> <a href=\"/monster/" + slug + "\">" + utils.fixTags(m['name'],m,args.nohtml) + "</a>"
 
 def getDesc(f,m,t = 1):
     text = ''

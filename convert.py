@@ -146,7 +146,10 @@ officialsources = [
     "MFF",
     "ESK",
     "EGW",
-    "MOT"
+    "MOT",
+    "SCC",
+    "MPMM",
+    "TDCSR"
     ]
 officialsources = utils.getPublishedSources()
 parser.add_argument(
@@ -412,6 +415,10 @@ for file in args.inputJSON:
         rndupe = 0
         rnwins = 0
         rnloss = 0
+    if 'monsterFluff' in d:
+        fluff = d['monsterFluff']
+    if 'legendaryGroup' in d:
+        lGroup = d['legendaryGroup']
     if 'monster' in d:
         for m in d['monster']:
             if args.srd:
@@ -467,16 +474,16 @@ for file in args.inputJSON:
                 if args.verbose or args.showdupe:
                     print ("{0} in {1} is duplicate entry for {2} from {3}".format(m['name'],utils.getFriendlySource(m['source'],args),xmlmon.find('name').text,xmlmon.find('source').text if xmlmon.find('source') != None else '--'))
                 mdupe += 1
-            if fluff is not None and 'monsterFluff' in fluff:
-                if 'entries' in m:
-                    m['entries'] += utils.appendFluff(fluff,m['name'])
-                else:
-                    m['entries'] = utils.appendFluff(fluff,m['name'])
-                if 'image' not in m:
-                    m['image'] = utils.findFluffImage(fluff,m['name'])
+            #if fluff is not None and 'monsterFluff' in fluff:
+            #    if 'entries' in m:
+            #        m['entries'] += utils.appendFluff(fluff,m['name'])
+            #    else:
+            #        m['entries'] = utils.appendFluff(fluff,m['name'])
+            #    if 'image' not in m:
+            #        m['image'] = utils.findFluffImage(fluff,m['name'])
             if ignoreError:
                 try:
-                    parseMonster(m, compendium, args)
+                    parseMonster(m, compendium, args, fluff, lGroup)
                     mwins += 1
                 except Exception:
                     print("FAILED: " + m['name'])
@@ -485,7 +492,7 @@ for file in args.inputJSON:
             else:
                 if args.verbose:
                     print("Parsing " + m['name'])
-                parseMonster(m, compendium, args)
+                parseMonster(m, compendium, args, fluff, lGroup)
                 mwins += 1
     if 'vehicle' in d:
         for m in d['vehicle']:
@@ -512,13 +519,13 @@ for file in args.inputJSON:
                 if args.verbose or args.showdupe:
                     print ("{0} in {1} is duplicate entry for {2} from {3}".format(m['name'],utils.getFriendlySource(m['source'],args),xmlmon.find('name').text,xmlmon.find('source').text))
                 mdupe += 1
-            if fluff is not None and 'vehicleFluff' in fluff:
-                if 'entries' in m:
-                    m['entries'] += utils.appendFluff(fluff,m['name'],'vehicleFluff',args.nohtml)
-                else:
-                    m['entries'] = utils.appendFluff(fluff,m['name'],'vehicleFluff',args.nohtml)
-                if 'image' not in m:
-                    m['image'] = utils.findFluffImage(fluff,m['name'],'vehicleFluff')
+            #if fluff is not None and 'vehicleFluff' in fluff:
+            #    if 'entries' in m:
+            #        m['entries'] += utils.appendFluff(fluff,m['name'],'vehicleFluff',args.nohtml)
+            #    else:
+            #        m['entries'] = utils.appendFluff(fluff,m['name'],'vehicleFluff',args.nohtml)
+            #    if 'image' not in m:
+            #        m['image'] = utils.findFluffImage(fluff,m['name'],'vehicleFluff')
             if 'alignment' not in m:
                 m['alignment'] = [ 'U' ]
             if m['vehicleType'] == "INFWAR":
@@ -673,7 +680,7 @@ for file in args.inputJSON:
                     m['hp'] = { "special": str(m['hp']) }
             if ignoreError:
                 try:
-                    parseMonster(m, compendium, args)
+                    parseMonster(m, compendium, args, fluff, lGroup)
                     mwins += 1
                 except Exception:
                     print("FAILED: " + m['name'])
@@ -682,7 +689,7 @@ for file in args.inputJSON:
             else:
                 if args.verbose:
                     print("Parsing " + m['name'])
-                parseMonster(m, compendium, args)
+                parseMonster(m, compendium, args, fluff, lGroup)
                 mwins += 1
     if 'spell' in d:
         for m in d['spell']:

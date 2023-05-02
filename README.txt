@@ -43,3 +43,5 @@ Some 5eTools monsters use their 'replace' feature, which is something that I mig
 ### Developer
 
 * Discord: **Flore#0001**
+
+my version: py convert.py -o "output.xml" "input.json"

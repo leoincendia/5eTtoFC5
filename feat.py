@@ -78,18 +78,18 @@ def parseFeat(m, compendium, args):
         if 'otherSources' in m and m["otherSources"] is not None:
             for s in m["otherSources"]:
                 sourcetext += ", "
-                sourcetext += "{}, page {}".format(
+                sourcetext += "{} p. {}".format(
                     utils.getFriendlySource(s["source"],args), s["page"]) if 'page' in s and s["page"] != 0 else utils.getFriendlySource(s["source"],args)
         if 'entries' in m:
             if args.nohtml:
                 m['entries'].append("Source: {}".format(sourcetext))
             else:
-                m['entries'].append("<b>Source:</b> {}".format(sourcetext))
+                m['entries'].append("<i>Source: {}</i>".format(sourcetext))
         else:
             if args.nohtml:
                 m['entries'] = ["Source: {}".format(sourcetext)]
             else:
-                m['entries'] = ["<b>Source:</b> {}".format(sourcetext)]
+                m['entries'] = ["<i>Source: {}</i>".format(sourcetext)]
 
         if not args.nohtml:
             source = ET.SubElement(feat, 'source')
@@ -171,10 +171,15 @@ def parseFeat(m, compendium, args):
             else:
                 if type(e) == dict and e["type"] == "list" and "style" in e and e["style"] == "list-hang-notitle":
                     for item in e["items"]:
-                        if args.nohtml:
-                            bodyText.text += "• {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)) + "\n"
+                        if type(item) == str:
+                            bodyText.text += "• {}".format(utils.fixTags(item,m,args.nohtml)) + "\n"
                         else:
-                            bodyText.text += "• <i>{}:</i> {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)) + "\n"
+                            if 'entry' not in item and 'entries' in item:
+                                item['entry'] = "; ".join(item['entries'])
+                            if args.nohtml:
+                                bodyText.text += "• {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)) + "\n"
+                            else:
+                                bodyText.text += "• <i>{}:</i> {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)) + "\n"
                 elif type(e) == dict and e["type"] == "list":
                     for item in e["items"]:
                         if "entries" in item:

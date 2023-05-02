@@ -78,18 +78,18 @@ def parseRace(m, compendium, args):
         if 'otherSources' in m and m["otherSources"] is not None:
             for s in m["otherSources"]:
                 sourcetext += ", "
-                sourcetext += "<i>{}</i>, page {}".format(
+                sourcetext += "{} p. {}".format(
                     utils.getFriendlySource(s["source"],args), s["page"]) if 'page' in s and s["page"] != 0 else utils.getFriendlySource(s["source"],args)
         if 'entries' in m:
             if args.nohtml:
                 m['entries'].append("Source: {}".format(sourcetext))
             else:
-                m['entries'].append("<b>Source:</b> {}".format(sourcetext))
+                m['entries'].append("<i>Source: {}</i>".format(sourcetext))
         else:
             if args.nohtml:
                 m['entries'] = ["Source: {}".format(sourcetext)]
             else:
-                m['entries'] = ["<b>Source:</b> {}".format(sourcetext)]
+                m['entries'] = ["<i>Source: {}</i>".format(sourcetext)]
         if not args.nohtml:
             source = ET.SubElement(race, 'source')
             source.text = sourcetext
@@ -176,6 +176,8 @@ def parseRace(m, compendium, args):
                         elif type(sube) == dict and sube["type"] == "list" and "style" in sube and sube["style"] == "list-hang-notitle":
                             for item in sube["items"]:
                                 if type(item) == dict and 'type' in item and (item['type'] == 'item' or item['type'] == 'itemSpell'):
+                                    if 'entry' not in item and 'entries' in item:
+                                        item['entry'] = "; ".join(item['entries'])
                                     if args.nohtml:
                                         subentries.append("• {} {}".format(item["name"] if item["name"].endswith(':') else item["name"] + ':',utils.fixTags(item["entry"],m,args.nohtml)))
                                     else:

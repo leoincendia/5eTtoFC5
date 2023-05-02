@@ -213,7 +213,7 @@ def fixTags(s,d=None,p=None,noencounter=False,nodice=False):
         return "<a href=\"/item/{}\">{}</a>".format(slugify(matchobj.group(1)),matchobj.group(1))
     s = re.sub(r'{@item (.*?)(\|.*?)?}', createILink, s)
     def createSLink(matchobj):
-        return "<i><a href=\"/spell/{}\">{}</a></i>".format(slugify(matchobj.group(1)),matchobj.group(1))
+        return "<a href=\"/spell/{}\">{}</a>".format(slugify(matchobj.group(1)),matchobj.group(1))
     s = re.sub(r'{@spell (.*?)(\|.*?)?}', createSLink, s)
     def createPLink(matchobj):
         return "<a href=\"/page/{}\">{}</a>".format(slugify(matchobj.group(1)),matchobj.group(1))

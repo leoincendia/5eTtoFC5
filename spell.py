@@ -25,6 +25,13 @@ def parseSpell(m, compendium, args):
     if m['school'] == 'P' and args.nohtml:
         spell.remove(school)
 
+    if 'subschools' in m:
+        subschool = ET.SubElement(spell, 'subschools')
+        sub = []
+        for s in m["subschools"]:
+            sub.append(s)
+        subschool.text = ", ".join(sub)
+
     if args.addimgs and os.path.isdir("./spells/"):
         if not os.path.isdir(os.path.join(args.tempdir,"spells")):
             os.mkdir(os.path.join(args.tempdir,"spells"))
@@ -108,8 +115,8 @@ def parseSpell(m, compendium, args):
             dtype = dtype[:-1]
         srange.text = "Self ({}-{} {})".format(m["range"]["distance"]["amount"],dtype,m["range"]["type"])
 
-    components = ET.SubElement(spell, 'components')
     if "components" in m:
+        components = ET.SubElement(spell, 'components')
         componentsList = []
         for c in m["components"]:
             if type(m["components"][c]) is bool:
@@ -188,7 +195,7 @@ def parseSpell(m, compendium, args):
             m["entries"] += higher["entries"]
 
     if 'source' in m and not args.srd:
-        sourcetext = "<i>{}</i>, page {}".format(
+        sourcetext = "{}, page {}".format(
             utils.getFriendlySource(m['source'],args), m['page']) if 'page' in m and m['page'] != 0 else utils.getFriendlySource(m['source'],args)
 
         if 'otherSources' in m and m["otherSources"] is not None:
@@ -196,7 +203,7 @@ def parseSpell(m, compendium, args):
                 if "source" not in s:
                     continue
                 sourcetext += "; "
-                sourcetext += "<i>{}</i>, page {}".format(
+                sourcetext += "{}, page {}".format(
                     utils.getFriendlySource(s["source"],args), s["page"]) if 'page' in s and s["page"] != 0 else utils.getFriendlySource(s["source"],args)
         if 'entries' in m:
             if args.nohtml:
@@ -211,16 +218,24 @@ def parseSpell(m, compendium, args):
         #if not args.nohtml:
             #source = ET.SubElement(spell, 'source')
             #source.text = sourcetext
+
+    if 'subschools' in m:
+        if len(sub) > 1:
+            m['entries'].append("<b>Subschools:</b> {}".format(subschool.text))
+        else:
+            m['entries'].append("<b>Subschool:</b> {}".format(subschool.text))
+
     bodyText = ET.SubElement(spell, 'text')
     bodyText.text = ""
-
     if 'entries' in m:
+        higher = False
         for e in m['entries']:
             if "colLabels" in e:
+                bodyText.text += "\n"
                 if 'caption' in e:
-                    bodyText.text += "{}\n".format(e['caption'])
-                bodyText.text += " | ".join([utils.remove5eShit(x)
-                                        for x in e['colLabels']])
+                    bodyText.text += "\n<b>{}</b>".format(e['caption'])
+                bodyText.text += "\n<b>" + "\t".join([utils.remove5eShit(x)
+                                        for x in e['colLabels']]) + "</b>"
                 bodyText.text += "\n"
                 for row in e['rows']:
                     rowthing = []
@@ -233,7 +248,7 @@ def parseSpell(m, compendium, args):
                                     r['roll']['exact']))
                         else:
                             rowthing.append(utils.fixTags(str(r),m,args.nohtml))
-                    bodyText.text += " | ".join(rowthing) + "\n"
+                    bodyText.text += "\t".join(rowthing) + "\n"
             elif "entries" in e:
                 subentries = []
                 for sube in e["entries"]:
@@ -250,8 +265,9 @@ def parseSpell(m, compendium, args):
             else:
                 if type(e) == dict and e["type"] == "list" and "style" in e and e["style"] == "list-hang-notitle":
                     for item in e["items"]:
-                        bodyText.text += "&lt;b&gt;•&lt;/b&gt; {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml)) + "\n    "
+                        bodyText.text += "\n<b>•</b> {}: {}".format(item["name"],utils.fixTags(item["entry"],m,args.nohtml))
                 elif type(e) == dict and e["type"] == "list":
+                    bodyText.text += "\n"
                     for item in e["items"]:
                         if "entries" in item:
                             subentries = []                    
@@ -262,11 +278,26 @@ def parseSpell(m, compendium, args):
                                     subentries.append(utils.fixTags(sube["text"],m,args.nohtml))
                                     bodyText.text += "\n".join(subentries) + "\n"
                         else:
-                            bodyText.text += "&lt;b&gt;•&lt;/b&gt; {}".format(utils.fixTags(item,m,args.nohtml)) + "\n    "
+                            bodyText.text += "\n<b>•</b> {}".format(utils.fixTags(item,m,args.nohtml))
+                    bodyText.text += "\n"
                 else:
-                    bodyText.text += utils.fixTags(e,m,args.nohtml) + "\n    "
+                    if "At Higher Levels." in e:
+                        bodyText.text += "\n" + utils.fixTags(e,m,args.nohtml)
+                        higher = True
+                        continue
+                    elif "<b>Source:" in e or "<b>Subschool" in e:
+                        if bodyText.text[-1] == "\n":
+                            bodyText.text += utils.fixTags(e,m,args.nohtml)
+                        else:
+                            bodyText.text += "\n" + utils.fixTags(e,m,args.nohtml)
+                        continue
+                    if higher:
+                        bodyText.text += " " + utils.fixTags(e,m,args.nohtml)
+                        higher = False
+                    else:
+                        bodyText.text += "\n    " + utils.fixTags(e,m,args.nohtml)
 
-        bodyText.text = bodyText.text.rstrip()
+        bodyText.text = bodyText.text.strip()
 
 #        for match in re.finditer(r'(([0-9])+[dD]([0-9])+([ ]?[-+][ ]?[0-9]+)?)( +\+ +your spellcasting ability modifier| for each slot level above ([0-9]))?',bodyText.text):
 #            if match.group(5) and match.group(6):
