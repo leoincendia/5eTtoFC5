@@ -479,19 +479,18 @@ def parseMonster(m, compendium, args, fluff, lGroup):
                     text.text = utils.fixTags(e,m,args.nohtml)
 
     if 'bonus' in m and m['bonus'] is not None:
-        action = ET.SubElement(monster, 'action')
-        name = ET.SubElement(action, 'name')
-        name.text = "Bonus Actions"
-        if not args.nohtml:
-            name.text = "<u><b>{}</b></u>".format(name.text)
         for t in m['bonus']:
-            action = ET.SubElement(monster, 'action')
+            action = ET.SubElement(monster, 'bonus')
             if 'name' in t:
                 name = ET.SubElement(action, 'name')
                 name.text = utils.remove5eShit(t['name']) + "."
-            for e in utils.getEntryString(t["entries"],m,args).split("\n"):
-                text = ET.SubElement(action, 'text')
-                text.text = e
+            
+            text = ET.SubElement(action, 'text')
+            text.text = utils.getEntryString(t["entries"],m,args)
+
+            #for e in utils.getEntryString(t["entries"],m,args).split("\n"):
+            #    text = ET.SubElement(action, 'text')
+            #    text.text = utils.remove5eShit(e)
                 #for match in re.finditer(r'(((\+|\-)?[0-9]*) to hit.*?|DC [0-9]+ .*? saving throw.*?)\(([0-9Dd\+\- ]+)\) .*? damage',e):
                 #    if match.group(4):
                 #        attack = ET.SubElement(action, 'attack')
@@ -502,9 +501,11 @@ def parseMonster(m, compendium, args, fluff, lGroup):
             action = ET.SubElement(monster, 'reaction')
             name = ET.SubElement(action, 'name')
             name.text = utils.remove5eShit(t['name']) + "."
-            for e in utils.getEntryString(t["entries"],m,args).split("\n"):
-                text = ET.SubElement(action, 'text')
-                text.text = e
+            text = ET.SubElement(action, 'text')
+            text.text = utils.getEntryString(t["entries"],m,args)
+            #for e in utils.getEntryString(t["entries"],m,args).split("\n"):
+            #    text = ET.SubElement(action, 'text')
+            #    text.text = e
 
     if 'variant' in m and m['variant'] is not None:
         if type(m['variant']) != list:
@@ -538,19 +539,13 @@ def parseMonster(m, compendium, args, fluff, lGroup):
             text.text = "<b>" + utils.remove5eShit(t['name']) + ".</b> " + utils.getEntryString(t["entries"],m,args)
 
     if 'mythic' in m:
-        mythic = ET.SubElement(monster, 'legendary')
-
         if "mythicHeader" in m:
             for h in m['mythicHeader']:
-                name = ET.SubElement(mythic, 'name')
-                name.text = "MYTHIC ACTIONS"
-                if not args.nohtml:
-                    name.text = "<u>{}</u>".format(name.text)
-                mythic = ET.SubElement(monster, 'legendary')
+                mythic = ET.SubElement(monster, 'mythic')
                 text = ET.SubElement(mythic, 'text')
                 text.text = utils.remove5eShit(h)
         for t in m['mythic']:
-            mythic = ET.SubElement(monster, 'legendary')
+            mythic = ET.SubElement(monster, 'mythic')
             name = ET.SubElement(mythic, 'name')
             if 'name' not in t:
                 t['name'] = ""
@@ -580,6 +575,10 @@ def parseMonster(m, compendium, args, fluff, lGroup):
     if 'environment' in m:
         environment = ET.SubElement(monster, 'environment')
         environment.text = ", ".join([x for x in m['environment']])
+    image = ET.SubElement(monster, 'image')
+    image.text = m['name'] + '_tob3.webp'
+    token = ET.SubElement(monster, 'token')
+    token.text = m['name'] + '_token_tob3.webp'
 
     if 'legendaryGroup' in m:
         #with open("./data/legendarygroups.json",encoding="utf-8") as f:
